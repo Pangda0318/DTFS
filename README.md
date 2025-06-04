@@ -2,10 +2,9 @@
 
 This is the code for "Dual-Transformer Feature Enhancement for Infrared Small-Dim Target Detection"(DTFE-Net)
 
-
 <div align="center">
   <img src="Figure/DTFE-Net.png" alt="DTFE-Net Architecture" width="80%">
-  <p style="font-family: Arial, sans-serif; font-size: 16px; color: #555;">
+  <p style="color: #222; font-size: 16px; font-weight: 500; margin-top: 4px;">
     Figure 1: The overall architecture of DTFE-Net
   </p>
 </div>
