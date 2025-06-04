@@ -57,7 +57,7 @@ This experiment includes multiple public datasets, which are introduced below on
   labels: "your root path/train_labels/xxx.png", "your root path/test_labels/xxx.png", where "xxx" will be automatically retrieved in the code.
   
 
-# 3.Train
+# 2. Train
 
 * change “--root” to your root path
 
@@ -72,7 +72,7 @@ This experiment includes multiple public datasets, which are introduced below on
 * python train.py`
 
   
-# 4.Test
+# 3. Test
 
 * change “--root” to your root path
  
