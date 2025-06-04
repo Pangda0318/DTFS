@@ -12,7 +12,7 @@ This is the code for "Dual-Transformer Feature Enhancement for Infrared Small-Di
 
 # 1. Data preparation
 
-This experiment includes multiple public datasets, which are introduced below one by one. The quadruple bicubic interpolation required in the DCHFR branch is included in the code. Additionally, since DCHFR incorporates a diffusion model, its testing process is relatively slower. To avoid affecting the training progress, you may consider extending the testing interval or reducing the number of test images.
+This experiment includes multiple public datasets, which are introduced below one by one. When trainning, you may consider extending the testing interval or reducing the number of test images to avoid affecting the progress, .
 
 ## 1.1 "NUAA"
 
