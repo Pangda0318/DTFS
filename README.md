@@ -5,8 +5,9 @@ This is the code for "Dual-Transformer Feature Enhancement for Infrared Small-Di
 
 <div align="center">
   <img src="Figure/DTFE-Net.png" alt="DTFE-Net Architecture" width="80%">
-  <br>
-  <em>Figure 1: The overall architecture of DTFE-Net</em>
+  <p style="font-family: Arial, sans-serif; font-size: 16px; color: #555;">
+    Figure 1: The overall architecture of DTFE-Net
+  </p>
 </div>
 
 
