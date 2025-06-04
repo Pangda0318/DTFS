@@ -1,6 +1,16 @@
 #  Dual-Transformer Feature Enhancement for Infrared Small-Dim Target Detection
 
-This is the official code for "Dual-Transformer Feature Enhancement for Infrared Small-Dim Target Detection"(DTFE-Net)
+This is the code for "Dual-Transformer Feature Enhancement for Infrared Small-Dim Target Detection"(DTFE-Net)
+
+
+<div align="center">
+  <img src="./Figure/DTFR-Net.png" alt="DTFE-Net Architecture" width="80%">
+  <br>
+  <em>Figure 1: The overall architecture of DTFE-Net</em>
+</div>
+
+
+
 
 # 1. Data preparation
 
