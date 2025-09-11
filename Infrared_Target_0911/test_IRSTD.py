@@ -9,7 +9,6 @@ import os.path as ops
 from datetime import datetime
 from utils.ISDTDDataset import ISDTDDataset
 from torch.utils.data import DataLoader
-# from model.DefineNet import define_trained_DCHFRnet, define_ISDTDnet
 from utils.utils import set_device,seed_pytorch
 from utils.BCEDiceloss import BCEDiceloss
 from torch.optim import lr_scheduler
@@ -43,7 +42,6 @@ def main(args):
     opt = torch.optim.Adam(optim_params, lr=1e-4)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=100, eta_min=0, last_epoch=-1)
     # scheduler = lr_scheduler.MultiStepLR(opt, milestones=[50,100,150], gamma=0.5)
-    print("---------------finished loading ISDTD model---------------")
 
     current_epoch = 0
     n_epoch = args.n_epoch
