@@ -32,7 +32,6 @@ def main(args):
     print("---------------finished loading dataloader---------------")
 
     net = set_device(ISDTDNet(args), device)
-    #net.load_state_dict(torch.load(args.resume_path))
     loss_func = BCEDiceloss().to(device)
     eval_iou = SigmoidMetric()
     eval_niou = SamplewiseSigmoidMetric(1, score_thresh=0.5)
@@ -51,77 +50,11 @@ def main(args):
     best_iou = 0
     best_niou = 0
     current_step = 0
-    if args.phase == 'train':
-        while current_epoch < n_epoch:
-            train_loss = 0.0
-            tbar = tqdm(train_loader)
-            for _, train_data in enumerate(tbar):
-                train_data = set_device(train_data, device)
-                img = train_data['img']
-                pred = net(img)
-                label = train_data['label']
-                label = label[:, 0:1, :, :]/255
-                loss_ISDTD, bce, dice = loss_func(pred,label)
-                current_step += 1
-                opt.zero_grad()
-                loss_ISDTD.backward()
-                opt.step()
-                scheduler.step()
-                train_loss += loss_ISDTD
-                tbar.set_description('Epoch %d, train loss %.4f, bce %.4f, dice %.4f' % (current_epoch, loss_ISDTD, bce, dice))
-            wandb.log({'train_epoch': current_epoch, 'train_loss': train_loss/len(train_loader)})
-            current_epoch += 1
-            if current_epoch % args.val_freq == 0:
-                print("---------------validation---------------")
-                val_tbar = tqdm(val_loader)
-                eval_iou.reset()
-                eval_niou.reset()
-                eval_PD_FA.reset()
-                eval_ROC.reset()
-                eval_loss = 0.0
-                net.eval()
-                for _, val_data in enumerate(val_tbar):
-                    val_img = val_data['img'] 
-                    val_img = set_device(val_img, device)
-                    with torch.no_grad():
-                        val_pred = net(val_img)
-                        val_label = val_data['label']
-                        val_label = set_device(val_label, device)
-                        val_label = val_label[:, 0:1, :, :]/255
-                        val_pred = val_pred
-                        val_loss_ISDTD, val_bce, val_dice = loss_func(val_pred, val_label)
-                        eval_loss += val_loss_ISDTD
-                        val_label = val_label.cpu()
-                        val_pred = val_pred.cpu()
-                        eval_iou.update(val_pred, val_label)
-                        eval_niou.update(val_pred, val_label)
-                        eval_ROC.update(val_pred, val_label)
-                        eval_PD_FA.update(val_pred, val_label)
-                    val_tbar.set_description('Epoch %d, val loss %.4f, bce %.4f, dice %.4f' % (current_epoch, val_loss_ISDTD, val_bce, val_dice))
-                FA, PD = eval_PD_FA.get(len(val_loader))
-                _, IoU = eval_iou.get()
-                _, nIoU = eval_niou.get()
-                _, _, _, _, F1_score = eval_ROC.get()
-                FA = FA[5] * 1000000
-                PD = PD[5] * 100
-                F1_score = F1_score[5]
-                wandb.log({'epoch': current_epoch, "ioU": IoU, "nioU": nIoU, 'test_loss': eval_loss/len(val_loader), "PD": PD, "FA": FA, "F1_score": F1_score})
-                if IoU > best_iou:
-                    best_iou = IoU
-                    if IoU > 0.78:
-                        pkl_name = 'best-%s-Epoch-%3d_IoU-%.4f_nIoU-%.4f.pkl' % (args.name,current_epoch, best_iou, nIoU)
-                        torch.save(net.state_dict(), ops.join(args.save_path, pkl_name))
-                if nIoU > best_niou:
-                    best_niou = nIoU
-                    
-                wandb.log({'epoch': current_epoch, "best_ioU": best_iou, "best_nioU": best_niou})
-                net.train()
+
     if args.phase == 'test':
-        # 创建保存预测结果的目录
-        output_dir = "/home2/hugl/IR/IR_ablation/IRSTD/3"
+        output_dir = ""
         os.makedirs(output_dir, exist_ok=True) 
         pkl_path = os.path.join(args.plk_path)
-        print("---------------validation---------------")
         val_tbar = tqdm(val_loader)
         eval_iou.reset()
         eval_niou.reset()
@@ -138,10 +71,8 @@ def main(args):
                 val_label = val_data['label']
                 val_label = set_device(val_label, device)
                 val_label = val_label[:, 0:1, :, :]/255
-                # 获取原始文件名（假设数据加载器提供了文件名）
-                # 如果没有，可以按序号命名
                 if 'name' in val_data:
-                    filename = os.path.basename(val_data['name'][0])  # 假设batch_size=1
+                    filename = os.path.basename(val_data['name'][0])  
                 else:
                     filename = f"pred_{i:04d}.png"
 
@@ -152,12 +83,9 @@ def main(args):
                 val_label = val_label.cpu()
                 val_pred = val_pred.cpu()
                 
-                pred_np = val_pred.squeeze().numpy()  # 去除batch和channel维度
-                
-                # 将概率转换为0-255范围
+                pred_np = val_pred.squeeze().numpy()  
+
                 pred_np = (pred_np * 255).clip(0, 255).astype(np.uint8)
-                
-                # 保存预测结果
                 output_path = os.path.join(output_dir, filename)
                 Image.fromarray(pred_np).save(output_path)
                 
@@ -166,7 +94,6 @@ def main(args):
                 eval_niou.update(val_pred, val_label)
                 eval_ROC.update(val_pred, val_label)
                 eval_PD_FA.update(val_pred, val_label)
-            # val_tbar.set_description('Epoch %d, val loss %.4f, bce %.4f, dice %.4f' % (current_epoch, val_loss_ISDTD, val_bce, val_dice))
         FA, PD = eval_PD_FA.get(len(val_loader))
         _, IoU = eval_iou.get()
         _, nIoU = eval_niou.get()
@@ -174,63 +101,11 @@ def main(args):
         FA = FA[5] * 1000000
         PD = PD[5] * 100
         F1_score = F1_score[5]
-        print("---------------Validation Results---------------")
-        print(f"{'Loss':<10} {'FA':<10} {'PD':<10} {'IoU':<10} {'nIoU':<10} {'F1 Score':<10}")
-        print(f"{eval_loss:.4f}   {FA:.2f}   {PD:.2f}   {IoU:.4f}   {nIoU:.4f}   {F1_score:.4f}")
-    # if args.phase == 'test':
-    #     pkl_path = os.path.join(args.plk_path)
-    #     print("---------------validation---------------")
-    #     val_tbar = tqdm(val_loader)
-    #     eval_iou.reset()
-    #     eval_niou.reset()
-    #     eval_PD_FA.reset()
-    #     eval_ROC.reset()
-    #     eval_loss = 0.0
-    #     total_infer_time = 0.0
-    #     net.load_state_dict(torch.load(pkl_path),strict = False)
-    #     net.eval()
-    #     for _, val_data in enumerate(val_tbar):
-    #         val_img = val_data['img'] 
-    #         val_img = set_device(val_img, device)
-    #         infer_start = time.time()   
-    #         with torch.no_grad():
-    #             val_pred = net(val_img)
-    #             infer_end = time.time()
-    #             total_infer_time += (infer_end - infer_start)
-    #             val_label = val_data['label']
-    #             val_label = set_device(val_label, device)
-    #             val_label = val_label[:, 0:1, :, :]/255
-    #             val_pred = val_pred
-    #             val_loss_ISDTD, val_bce, val_dice = loss_func(val_pred, val_label)
-    #             eval_loss += val_loss_ISDTD
-    #             val_label = val_label.cpu()
-    #             val_pred = val_pred.cpu()
-    #             eval_iou.update(val_pred, val_label)
-    #             eval_niou.update(val_pred, val_label)
-    #             eval_ROC.update(val_pred, val_label)
-    #             eval_PD_FA.update(val_pred, val_label)
-    #         # val_tbar.set_description('Epoch %d, val loss %.4f, bce %.4f, dice %.4f' % (current_epoch, val_loss_ISDTD, val_bce, val_dice))
-    #     FA, PD = eval_PD_FA.get(len(val_loader))
-    #     _, IoU = eval_iou.get()
-    #     _, nIoU = eval_niou.get()
-    #     _, _, _, _, F1_score = eval_ROC.get()
-    #     FA = FA[5] * 1000000
-    #     PD = PD[5] * 100
-    #     F1_score = F1_score[5]
-    #     print("---------------Validation Results---------------")
-    #     print(f"{'Loss':<10} {'FA':<10} {'PD':<10} {'IoU':<10} {'nIoU':<10} {'F1 Score':<10}")
-    #     print(f"{eval_loss:.4f}   {FA:.2f}   {PD:.2f}   {IoU:.4f}   {nIoU:.4f}   {F1_score:.4f}")
-    #     print(f"Average Time: {total_infer_time/len(val_loader):.4f} 秒")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--root', type=str, default='/home2/hugl/IR/datasets/IRSTD-1K', help='choose datasets')
+    parser.add_argument('--root', type=str, default=', help='choose datasets')
     parser.add_argument('--dataset_type', type=str, default='IRSTD', help='BigReal or BigSim or NUAA or NUDT or IRSTD')
-    parser.add_argument('--checkpoint_path', type=str, default='/xxxx_gen.pth', help='DCHFR checkpoint path')
-    parser.add_argument('--ISDTD_checkpoint_path', type=str, default='.pth', help='trained ISDTD checkpoint path')
-    # /home2/hugl/IR/Infrared_Target_1129/checkpoints/IRSTD/best-IRSTD_no7_19_WT+Mamba+FAS+CFAS+FAI_1024_22_tiqu_tiquzhulu_0.5_0.5-Epoch-365_IoU-0.7068_nIoU-0.6553.pkl
-    parser.add_argument('--resume_path', type=str, default='/home2/hugl/IR/Infrared_Target_1129/checkpoints/IRSTD/best-IRSTD_no7_19_WT+Mamba+FAS+CFAS+FAI_1024_22_tiqu_tiquzhulu-Epoch-396_IoU-0.7089_nIoU-0.6641.pkl', help='trained ISDTD checkpoint path')
     parser.add_argument('--base_size', type=int, default=512, help='img_size')
     parser.add_argument('--batch_size', type=int, default=1, help='train_batch_size')
     parser.add_argument('--val_batch_size', type=int, default=1, help='val_batch_size')
@@ -240,22 +115,19 @@ if __name__ == "__main__":
     parser.add_argument('--val_freq', type=int, default=1, help='validation frequent')
     parser.add_argument('--results_mask', type=str, default='results', help='mask result fold')
     parser.add_argument('--save_path', type=str, default='./checkpoints/IRSTD', help='checkpoint fold')
-    parser.add_argument('--name', type=str, default='NUDT_no8_WT+Mamba+FAS+CFAS+FAI_1024_22_tiqu_tiquzhulu_0.5_0.5_0217')#NUAA_no7_WT+Mamba+FAS+CFAS+FAI_1024_22_tiqu_tiquzhulu_0.5_0.5_0217
-    # parser.add_argument('--name', type=str, default='NUDT_no6_4_cnn+wt_swin_fusion_fas+cfas2')
+    parser.add_argument('--name', type=str, default='')
+
     parser.add_argument("--seed", type=int, default=42, help="Threshold for test")
-    parser.add_argument("--plk_path", type=str, default="/home2/hugl/IR/Infrared_Target_1129/checkpoints/select_ablation/IRSTD/best-IRSTD_no8_WT+Mamba+FAS+CFAS+FAI_1024_22_tiqu_tiquzhulu_0.5_0.5_0217-Epoch-249_IoU-0.6485_nIoU-0.6443.pkl")
+    parser.add_argument("--plk_path", type=str, default="")
     parser.add_argument('--resume', type=str, default=False)
 
     args = parser.parse_args()
     os.environ["CUDA_VISIBLE_DEVICES"] = "1"
     seed_pytorch(args.seed)
     if args.phase == 'train':
-        os.environ["WANDB_API_KEY"] = "f616ad77b967e58b1837619821297dfe3d274f01"
+        os.environ["WANDB_API_KEY"] = "×××××"
         wandb.login() 
         nowtime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    #wandb.init(project='no8_22_3_26', config=args.__dict__, name=args.name + nowtime, save_code=False) #NUAA_plus5 
-       # wandb.init(project='IRSTD_8_07_4yue01', config=args.__dict__, name=args.name + nowtime, save_code=False)
-        #wandb.init(project='IRSTD_8_4.02_qu Net 1*1..', config=args.__dict__, name=args.name + nowtime, save_code=False)
        
 
     main(args)
