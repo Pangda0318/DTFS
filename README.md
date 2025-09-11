@@ -83,8 +83,9 @@ This experiment includes multiple public datasets, which are introduced below on
 * python test.py`
 
 # 4. Related Checkpoints-----------the weights contain all the parameters and can restore the model to its state during training.
-IRSTD: https://pan.baidu.com/s/1mkaTLDW5ZD-8XuxwZKm0vg 提取码: 2yit 
-NUAA: https://pan.baidu.com/s/1T5Ri21vh2s94VMgXRBNw-w 提取码: v6kd 
+* IRSTD: https://pan.baidu.com/s/1mkaTLDW5ZD-8XuxwZKm0vg 提取码: 2yit
+
+* NUAA: https://pan.baidu.com/s/1T5Ri21vh2s94VMgXRBNw-w 提取码: v6kd 
 
 
 
